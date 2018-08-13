@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use App\TaskModel;
-use App\Http\Requests\TaskPostRequest;
 use Validator;
 use DB;
 class TaskController extends Controller
@@ -22,38 +21,60 @@ class TaskController extends Controller
 
     public function index()
     {
-        //Get all task
-        return TaskModel::all();
+        return response()->json(['data' => TaskModel::all(), 'status' => Response::HTTP_OK]);
     }
-    
-    public function store(Request $request)
+
+    public function show($id)
     {
+        $result = TaskModel::find($id);
+        if (!$result){
+            return response()->json([
+                'error' => 'Record not found',
+            ], 404);
+        }
+        return response()->json(['data' => $result, 'status' => Response::HTTP_OK]);
+    }
+
+    public function store(Request $request)
+    {   
         $validator = $this->taskValidate($request);
         if ($validator->fails()) {
-            //return json_encode($validator->errors()->all());
             return response()->json(['errors' => $validator->errors()->all(), 'status' => Response::HTTP_BAD_REQUEST]);
         }
 
-        $id = TaskModel::create($request->all());
-        return response()->json(['id' => $id, 'status' => Response::HTTP_CREATED]);
+        $data = TaskModel::create($request->all());
+        return response()->json(['data' => $data, 'status' => Response::HTTP_CREATED]);
     }
  
-    public function update(Request $request, TaskModel $id)
+    public function update(Request $request, $id)
     {
-        $validator = $this->taskValidate($request);
-        if ($validator->fails()) {
-            //return json_encode($validator->errors()->all());
-            return response()->json(['errors' => $validator->errors()->all(), 'status' => Response::HTTP_BAD_REQUEST]);
+        $data = TaskModel::find($id);
+        if (!$data){
+            return response()->json([
+                'error' => 'Record not found',
+            ], 404);
         }
-        
-        $id->update($request->all());
-        return response()->json(['id' => $id, 'status' => Response::HTTP_OK]);
+
+        if($id){
+            $validator = $this->taskValidate($request);
+            if ($validator->fails()) {
+                return response()->json(['errors' => $validator->errors()->all(), 'status' => Response::HTTP_BAD_REQUEST]);
+            }
+        }
+
+        $data->update($request->all());
+        return response()->json(['data' => $data, 'status' => Response::HTTP_OK]);
     }
  
-    public function delete(TaskModel $id)
+    public function delete($id)
     {
-        $id->delete();
-        return response()->json(['id' => $id, 'status' => Response::HTTP_OK]);
+        $data = TaskModel::find($id);
+        if (!$data){
+            return response()->json([
+                'error' => 'Record not found',
+            ], 404);
+        }
+        $data->delete();
+        return response()->json(['data' => $data, 'status' => Response::HTTP_OK]);
     }
- 
 }
